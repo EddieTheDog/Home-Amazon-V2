@@ -1,0 +1,46 @@
+<% layout('layout', { title: 'Store Dashboard', user: user }) %>
+
+<div class="bg-white p-6 rounded shadow">
+  <h1 class="text-2xl font-bold">Store Dashboard</h1>
+
+  <div class="mt-4">
+    <table class="w-full text-left">
+      <thead>
+        <tr>
+          <th class="p-2">ID</th>
+          <th class="p-2">Tracking</th>
+          <th class="p-2">Location</th>
+          <th class="p-2">Status</th>
+          <th class="p-2">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% list.forEach(r => { %>
+          <tr class="border-t">
+            <td class="p-2 font-mono"><%= r.id %></td>
+            <td class="p-2"><%= r.trackingNumber || '-' %></td>
+            <td class="p-2"><%= r.storageLocation || '-' %></td>
+            <td class="p-2"><%= r.status %></td>
+            <td class="p-2">
+              <button onclick="moveToLoading('<%= r.id %>')" class="px-2 py-1 bg-blue-600 text-white rounded text-sm">Move to loading</button>
+              <button onclick="markReady('<%= r.id %>')" class="px-2 py-1 bg-green-600 text-white rounded text-sm">Mark ready</button>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+async function moveToLoading(id) {
+  const res = await fetch('/api/reservations/' + encodeURIComponent(id) + '/move-to-loading', { method: 'POST' });
+  if (!res.ok) return alert('Error');
+  location.reload();
+}
+async function markReady(id) {
+  const res = await fetch('/api/reservations/' + encodeURIComponent(id) + '/mark-ready', { method: 'POST' });
+  if (!res.ok) return alert('Error');
+  location.reload();
+}
+</script>
