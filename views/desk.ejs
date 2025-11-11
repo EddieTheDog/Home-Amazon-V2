@@ -1,0 +1,71 @@
+<% layout('layout', { title: 'Front Desk', user: user }) %>
+
+<div class="bg-white p-6 rounded shadow">
+  <h1 class="text-2xl font-bold">Front Desk</h1>
+
+  <div class="mt-4">
+    <label class="block text-sm font-medium">Load by Reservation ID / Tracking #</label>
+    <input id="lookupInput" class="mt-1 block w-full border p-2 rounded" placeholder="Enter Rxxxxx or T-XXXXX"/>
+    <div class="mt-2">
+      <button id="loadBtn" class="px-3 py-1 bg-blue-600 text-white rounded">Load</button>
+    </div>
+  </div>
+
+  <div id="recordArea" class="mt-6"></div>
+</div>
+
+<script>
+async function loadRecord(id) {
+  const res = await fetch('/api/reservations/' + encodeURIComponent(id));
+  if (!res.ok) {
+    document.getElementById('recordArea').innerHTML = '<div class="text-red-600">Not found</div>';
+    return;
+  }
+  const rec = await res.json();
+  renderRecord(rec);
+}
+
+function renderRecord(rec) {
+  const area = document.getElementById('recordArea');
+  area.innerHTML = `
+    <div class="border p-4 rounded bg-gray-50">
+      <div><strong>ID:</strong> <span class="font-mono">${rec.id}</span></div>
+      <div><strong>Status:</strong> ${rec.status}</div>
+      <div><strong>Item:</strong> ${rec.itemDescription}</div>
+      <div class="mt-3">
+        <label class="block text-sm">Storage Location</label>
+        <input id="storageLocation" value="${rec.storageLocation || ''}" class="mt-1 block w-full border p-2 rounded"/>
+      </div>
+      <div class="mt-3">
+        <label class="block text-sm">Tags (comma separated)</label>
+        <input id="tagsInput" value="${rec.frontDeskTags ? rec.frontDeskTags.join(',') : ''}" class="mt-1 block w-full border p-2 rounded"/>
+      </div>
+      <div class="mt-4 space-x-2">
+        <button id="assignBtn" class="px-3 py-1 bg-green-600 text-white rounded">Assign tracking & Print label</button>
+        <a id="printLink" class="px-3 py-1 bg-gray-200 rounded hidden" target="_blank">Open Label</a>
+      </div>
+    </div>
+  `;
+  document.getElementById('assignBtn').onclick = async () => {
+    const storageLocation = document.getElementById('storageLocation').value;
+    const tags = document.getElementById('tagsInput').value.split(',').map(s => s.trim()).filter(Boolean);
+    const res = await fetch('/api/reservations/' + encodeURIComponent(rec.id) + '/assign-tracking', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ storageLocation, frontDeskTags: tags })
+    });
+    const out = await res.json();
+    if (!res.ok) return alert('Error: ' + JSON.stringify(out));
+    // Open label in new tab
+    const labelUrl = '/api/reservations/' + encodeURIComponent(out.id) + '/label';
+    window.open(labelUrl, '_blank');
+    loadRecord(out.id);
+  };
+}
+
+document.getElementById('loadBtn').addEventListener('click', () => {
+  const id = document.getElementById('lookupInput').value.trim();
+  if (!id) return alert('Enter ID');
+  loadRecord(id);
+});
+</script>
