@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Label - <%= reservation.trackingNumber %></title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 12px; }
+    .label { width: 360px; border: 1px solid #333; padding: 10px; }
+    .barcode { margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="label">
+    <div><strong>Tracking:</strong> <%= reservation.trackingNumber %></div>
+    <div><strong>Reservation:</strong> <%= reservation.id %></div>
+    <div><strong>Item:</strong> <%= reservation.itemDescription %></div>
+    <div class="barcode">
+      <img src="data:image/png;base64,<%= barcodeBase64 %>" alt="barcode"/>
+    </div>
+  </div>
+  <script>
+    // Auto open print dialog in a new tab
+    try { window.print(); } catch(e) {}
+  </script>
+</body>
+</html>
