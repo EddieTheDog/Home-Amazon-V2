@@ -1,43 +1,40 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Front Desk</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <script>
-    async function loadReservation() {
-      const id = document.getElementById('reservationId').value;
-      const res = await fetch('/api/reservations/' + id);
-      if (!res.ok) return alert('Reservation not found');
-      const data = await res.json();
-      document.getElementById('info').innerText = JSON.stringify(data, null, 2);
-    }
-    async function assignTracking() {
-      const id = document.getElementById('reservationId').value;
-      const storage = document.getElementById('storage').value;
-      const res = await fetch('/api/reservations/' + id + '/assign-tracking', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ storageLocation: storage })
-      });
-      const data = await res.json();
-      alert('Tracking assigned: ' + data.trackingNumber);
-    }
-  </script>
-</head>
-<body class="bg-gray-100 p-6">
-  <div class="max-w-2xl mx-auto bg-white p-6 rounded shadow">
-    <h1 class="text-2xl font-bold mb-4">Front Desk</h1>
-    <div class="mb-4">
-      <input type="text" id="reservationId" placeholder="Reservation ID" class="border p-2 rounded w-1/2">
-      <button onclick="loadReservation()" class="bg-blue-500 text-white px-4 py-2 rounded ml-2">Load</button>
-    </div>
-    <pre id="info" class="bg-gray-100 p-2 rounded mb-4"></pre>
-    <div class="mb-4">
-      <label>Storage Location</label>
-      <input type="text" id="storage" class="border p-2 rounded w-full">
-      <button onclick="assignTracking()" class="bg-green-500 text-white px-4 py-2 rounded mt-2">Assign Tracking</button>
-    </div>
-  </div>
-</body>
-</html>
+<div class="card">
+  <h1>Front Desk</h1>
+  <label>Reservation ID or Scan:</label>
+  <input type="text" id="scanInput" placeholder="Enter Reservation ID">
+  <button onclick="loadReservation()">Load</button>
+</div>
+
+<div id="reservationDetails" class="card" style="display:none;">
+  <h2>Reservation Details</h2>
+  <div id="details"></div>
+  <label>Storage Location:</label>
+  <input type="text" id="storageLocation">
+  <button onclick="assignTracking()">Assign Tracking & Print Label</button>
+</div>
+
+<script>
+let currentRes;
+
+async function loadReservation() {
+  const id = document.getElementById('scanInput').value;
+  const res = await fetch('/api/reservations/' + id);
+  if (!res.ok) { alert('Reservation not found'); return; }
+  currentRes = await res.json();
+  document.getElementById('reservationDetails').style.display = 'block';
+  document.getElementById('details').innerText = JSON.stringify(currentRes, null, 2);
+}
+
+async function assignTracking() {
+  if (!currentRes) return;
+  const location = document.getElementById('storageLocation').value;
+  const res = await fetch(`/api/reservations/${currentRes.id}/assign-tracking`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ storageLocation: location })
+  });
+  const result = await res.json();
+  alert('Tracking Assigned: ' + result.trackingNumber);
+  window.open('/print_label/' + currentRes.id, '_blank');
+}
+</script>
