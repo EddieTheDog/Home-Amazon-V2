@@ -1,43 +1,42 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Store Dashboard</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <script>
-    async function loadStored() {
-      const res = await fetch('/api/reservations?status=stored');
-      const data = await res.json();
-      const table = document.getElementById('storedItems');
-      table.innerHTML = data.map(d => `<tr>
-        <td>${d.id}</td>
-        <td>${d.itemDescription}</td>
-        <td>${d.storageLocation}</td>
-        <td><button onclick="moveToLoading('${d.id}')">Move to Loading</button></td>
-      </tr>`).join('');
-    }
-    async function moveToLoading(id) {
-      await fetch('/api/reservations/' + id + '/move-to-loading', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
-      alert('Moved to loading');
-      loadStored();
-    }
-    window.onload = loadStored;
-  </script>
-</head>
-<body class="bg-gray-100 p-6">
-  <div class="max-w-3xl mx-auto bg-white p-6 rounded shadow">
-    <h1 class="text-2xl font-bold mb-4">Store Dashboard</h1>
-    <table class="table-auto w-full border-collapse border">
-      <thead>
-        <tr>
-          <th class="border px-2 py-1">ID</th>
-          <th class="border px-2 py-1">Item</th>
-          <th class="border px-2 py-1">Location</th>
-          <th class="border px-2 py-1">Actions</th>
-        </tr>
-      </thead>
-      <tbody id="storedItems"></tbody>
-    </table>
-  </div>
-</body>
-</html>
+<div class="card">
+  <h1>Store Dashboard</h1>
+  <table id="itemsTable">
+    <thead>
+      <tr><th>ID</th><th>Status</th><th>Storage</th><th>Actions</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<script>
+async function loadItems() {
+  const res = await fetch('/api/reservations?status=stored');
+  const items = await res.json();
+  const tbody = document.querySelector('#itemsTable tbody');
+  tbody.innerHTML = '';
+  items.forEach(item => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${item.id}</td>
+      <td>${item.status}</td>
+      <td>${item.storageLocation || ''}</td>
+      <td>
+        <button onclick="moveToLoading('${item.id}')">Move to Loading Bay</button>
+        <button onclick="markReady('${item.id}')">Mark Ready</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+async function moveToLoading(id) {
+  await fetch(`/api/reservations/${id}/move-to-loading`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({by:'store'})});
+  loadItems();
+}
+
+async function markReady(id) {
+  await fetch(`/api/reservations/${id}/mark-ready`, {method:'POST'});
+  loadItems();
+}
+
+loadItems();
+</script>
