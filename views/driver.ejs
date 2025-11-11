@@ -1,44 +1,53 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Driver Portal</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <script>
-    async function loadPackage() {
-      const code = document.getElementById('trackingNumber').value;
-      const res = await fetch('/api/reservations/' + code);
-      if (!res.ok) return alert('Package not found');
-      const data = await res.json();
-      document.getElementById('info').innerText = JSON.stringify(data, null, 2);
-    }
-    async function deliverPackage() {
-      const code = document.getElementById('trackingNumber').value;
-      const note = document.getElementById('proof').value;
-      const res = await fetch('/api/reservations/' + code + '/deliver', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ proofType: 'text', proofValue: note })
-      });
-      const data = await res.json();
-      alert('Package delivered');
-      document.getElementById('info').innerText = JSON.stringify(data, null, 2);
-    }
-  </script>
-</head>
-<body class="bg-gray-100 p-6">
-  <div class="max-w-2xl mx-auto bg-white p-6 rounded shadow">
-    <h1 class="text-2xl font-bold mb-4">Driver Portal</h1>
-    <div class="mb-4">
-      <input type="text" id="trackingNumber" placeholder="Tracking Number" class="border p-2 rounded w-1/2">
-      <button onclick="loadPackage()" class="bg-blue-500 text-white px-4 py-2 rounded ml-2">Load Package</button>
-    </div>
-    <pre id="info" class="bg-gray-100 p-2 rounded mb-4"></pre>
-    <div>
-      <label>Proof / Note</label>
-      <input type="text" id="proof" class="border p-2 rounded w-full mb-2">
-      <button onclick="deliverPackage()" class="bg-green-500 text-white px-4 py-2 rounded">Deliver</button>
-    </div>
-  </div>
-</body>
-</html>
+<div class="card">
+  <h1>Driver</h1>
+  <label>Scan or Enter Tracking Number:</label>
+  <input type="text" id="trackingInput">
+  <button onclick="loadPackage()">Load</button>
+</div>
+
+<div id="packageDetails" class="card" style="display:none;">
+  <h2>Package Details</h2>
+  <pre id="details"></pre>
+  <button onclick="claim()">Claim for Delivery</button>
+  <button onclick="deliver()">Mark Delivered</button>
+  <input type="file" id="proofPhoto" accept="image/*">
+  <input type="text" id="proofText" placeholder="Or enter proof text">
+</div>
+
+<script>
+let currentPkg;
+
+async function loadPackage() {
+  const tracking = document.getElementById('trackingInput').value;
+  const res = await fetch(`/api/reservations/${tracking}`);
+  if (!res.ok) { alert('Package not found'); return; }
+  currentPkg = await res.json();
+  document.getElementById('packageDetails').style.display = 'block';
+  document.getElementById('details').innerText = JSON.stringify(currentPkg, null, 2);
+}
+
+async function claim() {
+  if (!currentPkg) return;
+  await fetch(`/api/reservations/${currentPkg.id}/claim`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({driverId:'driver1'})});
+  alert('Claimed for delivery');
+}
+
+async function deliver() {
+  if (!currentPkg) return;
+  const photoInput = document.getElementById('proofPhoto');
+  const text = document.getElementById('proofText').value;
+  let proof = {};
+  if (photoInput.files[0]) {
+    const formData = new FormData();
+    formData.append('proofPhoto', photoInput.files[0]);
+    await fetch(`/api/reservations/${currentPkg.id}/deliver`, {method:'POST', body: formData});
+    alert('Delivered with photo');
+  } else if (text) {
+    await fetch(`/api/reservations/${currentPkg.id}/deliver`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({proofType:'text', proofValue:text})});
+    alert('Delivered with text proof');
+  } else {
+    alert('No proof provided');
+  }
+  loadPackage();
+}
+</script>
