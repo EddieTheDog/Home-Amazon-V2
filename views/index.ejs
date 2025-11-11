@@ -1,47 +1,47 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Reserve a Pickup</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <script>
-    async function submitReservation(event) {
-      event.preventDefault();
-      const form = event.target;
-      const data = {
-        customerName: form.customerName.value,
-        customerContact: form.customerContact.value,
-        itemDescription: form.itemDescription.value,
-        weightEstimate: form.weightEstimate.value
-      };
-      const res = await fetch('/api/reservations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
-      const result = await res.json();
-      alert('Reservation created! ID: ' + result.id + '\nTracking: ' + result.qrUrl);
-    }
-  </script>
-</head>
-<body class="bg-gray-100 p-6">
-  <div class="max-w-md mx-auto bg-white p-6 rounded shadow">
-    <h1 class="text-2xl font-bold mb-4">Create a Reservation</h1>
-    <form onsubmit="submitReservation(event)">
-      <label class="block mb-2">Item Description *</label>
-      <input type="text" name="itemDescription" required class="border p-2 w-full mb-4 rounded">
-      
-      <label class="block mb-2">Weight Estimate</label>
-      <input type="text" name="weightEstimate" class="border p-2 w-full mb-4 rounded">
-      
-      <label class="block mb-2">Customer Name</label>
-      <input type="text" name="customerName" class="border p-2 w-full mb-4 rounded">
-      
-      <label class="block mb-2">Contact Info</label>
-      <input type="text" name="customerContact" class="border p-2 w-full mb-4 rounded">
-      
-      <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Submit</button>
-    </form>
-  </div>
-</body>
-</html>
+<div class="card">
+  <h1>Create a Reservation</h1>
+  <form id="reservationForm" method="POST" action="/api/reservations">
+    <label>Item Description (required)</label>
+    <input type="text" name="itemDescription" required>
+
+    <label>Weight Estimate (optional)</label>
+    <input type="text" name="weightEstimate">
+
+    <label>Customer Name (optional)</label>
+    <input type="text" name="customerName">
+
+    <label>Customer Contact (optional)</label>
+    <input type="text" name="customerContact">
+
+    <button type="submit">Reserve</button>
+  </form>
+</div>
+
+<div id="confirmation" class="card" style="display:none;">
+  <h2>Reservation Created!</h2>
+  <p>Your reservation ID: <span id="reservationId"></span></p>
+  <p>QR Code:</p>
+  <img id="qrImage" src="" alt="QR code">
+  <p>Tracking URL: <a id="trackingUrl" href="" target="_blank"></a></p>
+</div>
+
+<script>
+document.getElementById('reservationForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const form = e.target;
+  const data = Object.fromEntries(new FormData(form).entries());
+  const res = await fetch('/api/reservations', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  const result = await res.json();
+
+  form.style.display = 'none';
+  document.getElementById('confirmation').style.display = 'block';
+  document.getElementById('reservationId').innerText = result.id;
+  document.getElementById('qrImage').src = result.qrUrl;
+  document.getElementById('trackingUrl').href = result.qrUrl;
+  document.getElementById('trackingUrl').innerText = result.qrUrl;
+});
+</script>
