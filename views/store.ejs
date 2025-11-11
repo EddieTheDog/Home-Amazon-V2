@@ -1,46 +1,43 @@
-<% layout('layout', { title: 'Store Dashboard', user: user }) %>
-
-<div class="bg-white p-6 rounded shadow">
-  <h1 class="text-2xl font-bold">Store Dashboard</h1>
-
-  <div class="mt-4">
-    <table class="w-full text-left">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Store Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script>
+    async function loadStored() {
+      const res = await fetch('/api/reservations?status=stored');
+      const data = await res.json();
+      const table = document.getElementById('storedItems');
+      table.innerHTML = data.map(d => `<tr>
+        <td>${d.id}</td>
+        <td>${d.itemDescription}</td>
+        <td>${d.storageLocation}</td>
+        <td><button onclick="moveToLoading('${d.id}')">Move to Loading</button></td>
+      </tr>`).join('');
+    }
+    async function moveToLoading(id) {
+      await fetch('/api/reservations/' + id + '/move-to-loading', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+      alert('Moved to loading');
+      loadStored();
+    }
+    window.onload = loadStored;
+  </script>
+</head>
+<body class="bg-gray-100 p-6">
+  <div class="max-w-3xl mx-auto bg-white p-6 rounded shadow">
+    <h1 class="text-2xl font-bold mb-4">Store Dashboard</h1>
+    <table class="table-auto w-full border-collapse border">
       <thead>
         <tr>
-          <th class="p-2">ID</th>
-          <th class="p-2">Tracking</th>
-          <th class="p-2">Location</th>
-          <th class="p-2">Status</th>
-          <th class="p-2">Actions</th>
+          <th class="border px-2 py-1">ID</th>
+          <th class="border px-2 py-1">Item</th>
+          <th class="border px-2 py-1">Location</th>
+          <th class="border px-2 py-1">Actions</th>
         </tr>
       </thead>
-      <tbody>
-        <% list.forEach(r => { %>
-          <tr class="border-t">
-            <td class="p-2 font-mono"><%= r.id %></td>
-            <td class="p-2"><%= r.trackingNumber || '-' %></td>
-            <td class="p-2"><%= r.storageLocation || '-' %></td>
-            <td class="p-2"><%= r.status %></td>
-            <td class="p-2">
-              <button onclick="moveToLoading('<%= r.id %>')" class="px-2 py-1 bg-blue-600 text-white rounded text-sm">Move to loading</button>
-              <button onclick="markReady('<%= r.id %>')" class="px-2 py-1 bg-green-600 text-white rounded text-sm">Mark ready</button>
-            </td>
-          </tr>
-        <% }) %>
-      </tbody>
+      <tbody id="storedItems"></tbody>
     </table>
   </div>
-</div>
-
-<script>
-async function moveToLoading(id) {
-  const res = await fetch('/api/reservations/' + encodeURIComponent(id) + '/move-to-loading', { method: 'POST' });
-  if (!res.ok) return alert('Error');
-  location.reload();
-}
-async function markReady(id) {
-  const res = await fetch('/api/reservations/' + encodeURIComponent(id) + '/mark-ready', { method: 'POST' });
-  if (!res.ok) return alert('Error');
-  location.reload();
-}
-</script>
+</body>
+</html>
