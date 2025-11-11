@@ -1,73 +1,47 @@
-<% layout('layout', { title: 'Reserve a Pickup', user: null }) %>
-
-<div class="bg-white p-6 rounded shadow">
-  <h1 class="text-2xl font-bold mb-4">Create a Reservation</h1>
-
-  <form id="reserveForm" method="post" action="/api/reservations" class="space-y-4">
-    <div>
-      <label class="block text-sm font-medium">Item description *</label>
-      <input name="itemDescription" required class="mt-1 block w-full border p-2 rounded" placeholder="e.g., Box with documents"/>
-    </div>
-
-    <div>
-      <label class="block text-sm font-medium">Weight estimate</label>
-      <input name="weightEstimate" class="mt-1 block w-full border p-2 rounded" placeholder="e.g., 2.5 kg"/>
-    </div>
-
-    <div>
-      <label class="block text-sm font-medium">Customer name</label>
-      <input name="customerName" class="mt-1 block w-full border p-2 rounded" placeholder="Optional"/>
-    </div>
-
-    <div>
-      <label class="block text-sm font-medium">Contact (phone or email)</label>
-      <input name="customerContact" class="mt-1 block w-full border p-2 rounded" placeholder="Optional"/>
-    </div>
-
-    <div>
-      <label class="block text-sm font-medium">Desired window</label>
-      <select name="desiredWindow" class="mt-1 block w-full border p-2 rounded">
-        <option value="">No preference</option>
-        <option>ASAP</option>
-        <option>Within 2 hours</option>
-        <option>Today afternoon</option>
-      </select>
-    </div>
-
-    <div class="pt-4">
-      <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Create Reservation</button>
-    </div>
-  </form>
-
-  <div id="result" class="mt-6"></div>
-</div>
-
-<script>
-document.getElementById('reserveForm').addEventListener('submit', async function(e) {
-  e.preventDefault();
-  const form = e.target;
-  const data = Object.fromEntries(new FormData(form).entries());
-  const res = await fetch('/api/reservations', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
-  });
-  const out = await res.json();
-  if (!res.ok) {
-    document.getElementById('result').innerHTML = '<div class="text-red-600">Error: ' + (out.error || JSON.stringify(out)) + '</div>';
-    return;
-  }
-  // show confirmation with QR
-  const qr = await fetch(out.qrUrl); // we will just show link next
-  document.getElementById('result').innerHTML = `
-    <div class="bg-green-50 border p-4 rounded">
-      <div class="font-bold">Reservation created: <span class="font-mono">${out.id}</span></div>
-      <div class="mt-2">Tracking URL: <a class="text-blue-600 underline" href="${out.qrUrl}" target="_blank">${out.qrUrl}</a></div>
-      <div class="mt-2">QR below:</div>
-      <div class="mt-2"><img src="${out.qrUrl.replace('/track/','/track/').replace(window.location.origin, window.location.origin)}" style="display:none"/></div>
-      <div class="mt-2">Open the tracking URL in a new tab to view status and events.</div>
-    </div>
-  `;
-  // We won't fetch the QR image here (server-side /track/:id generates the QR on page).
-});
-</script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Reserve a Pickup</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script>
+    async function submitReservation(event) {
+      event.preventDefault();
+      const form = event.target;
+      const data = {
+        customerName: form.customerName.value,
+        customerContact: form.customerContact.value,
+        itemDescription: form.itemDescription.value,
+        weightEstimate: form.weightEstimate.value
+      };
+      const res = await fetch('/api/reservations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const result = await res.json();
+      alert('Reservation created! ID: ' + result.id + '\nTracking: ' + result.qrUrl);
+    }
+  </script>
+</head>
+<body class="bg-gray-100 p-6">
+  <div class="max-w-md mx-auto bg-white p-6 rounded shadow">
+    <h1 class="text-2xl font-bold mb-4">Create a Reservation</h1>
+    <form onsubmit="submitReservation(event)">
+      <label class="block mb-2">Item Description *</label>
+      <input type="text" name="itemDescription" required class="border p-2 w-full mb-4 rounded">
+      
+      <label class="block mb-2">Weight Estimate</label>
+      <input type="text" name="weightEstimate" class="border p-2 w-full mb-4 rounded">
+      
+      <label class="block mb-2">Customer Name</label>
+      <input type="text" name="customerName" class="border p-2 w-full mb-4 rounded">
+      
+      <label class="block mb-2">Contact Info</label>
+      <input type="text" name="customerContact" class="border p-2 w-full mb-4 rounded">
+      
+      <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Submit</button>
+    </form>
+  </div>
+</body>
+</html>
