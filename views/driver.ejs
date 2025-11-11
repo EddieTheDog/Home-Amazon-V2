@@ -1,89 +1,44 @@
-<% layout('layout', { title: 'Driver', user: user }) %>
-
-<div class="bg-white p-6 rounded shadow">
-  <h1 class="text-2xl font-bold">Driver Portal</h1>
-
-  <div class="mt-4">
-    <label class="block text-sm">Scan or enter tracking number</label>
-    <input id="scanInput" class="mt-1 block w-full border p-2 rounded" placeholder="T-XXXXXX or tracking number"/>
-    <div class="mt-2">
-      <button id="loadBtn" class="px-3 py-1 bg-blue-600 text-white rounded">Load</button>
-    </div>
-  </div>
-
-  <div id="recArea" class="mt-6"></div>
-</div>
-
-<script>
-async function load(id) {
-  const res = await fetch('/api/reservations/' + encodeURIComponent(id));
-  if (!res.ok) return document.getElementById('recArea').innerHTML = '<div class="text-red-600">Not found</div>';
-  const rec = await res.json();
-  document.getElementById('recArea').innerHTML = `
-    <div class="border p-4 rounded bg-gray-50">
-      <div><strong>ID:</strong> ${rec.id}</div>
-      <div><strong>Item:</strong> ${rec.itemDescription}</div>
-      <div><strong>Location:</strong> ${rec.storageLocation || '-'}</div>
-      <div><strong>Status:</strong> ${rec.status}</div>
-      <div class="mt-3 space-x-2">
-        <button id="claimBtn" class="px-3 py-1 bg-yellow-500 rounded">Claim</button>
-        <button id="deliverBtn" class="px-3 py-1 bg-green-600 text-white rounded">Deliver (text)</button>
-        <button id="deliverPhotoBtn" class="px-3 py-1 bg-gray-200 rounded">Deliver (photo)</button>
-      </div>
-      <div id="deliverArea" class="mt-3"></div>
-    </div>
-  `;
-  document.getElementById('claimBtn').onclick = async () => {
-    const res = await fetch('/api/reservations/' + encodeURIComponent(rec.id) + '/claim', { method: 'POST' });
-    if (!res.ok) return alert('Error claiming');
-    alert('Claimed');
-    load(rec.id);
-  };
-  document.getElementById('deliverBtn').onclick = () => {
-    document.getElementById('deliverArea').innerHTML = `
-      <form id="textDeliverForm">
-        <textarea name="proofValue" required class="w-full border p-2 rounded" placeholder="Delivery note"></textarea>
-        <div class="mt-2"><button class="px-3 py-1 bg-green-600 text-white rounded">Submit</button></div>
-      </form>
-    `;
-    document.getElementById('textDeliverForm').onsubmit = async (e) => {
-      e.preventDefault();
-      const formData = new FormData(e.target);
-      const payload = { proofType: 'text', proofValue: formData.get('proofValue') };
-      const res = await fetch('/api/reservations/' + encodeURIComponent(rec.id) + '/deliver', {
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Driver Portal</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script>
+    async function loadPackage() {
+      const code = document.getElementById('trackingNumber').value;
+      const res = await fetch('/api/reservations/' + code);
+      if (!res.ok) return alert('Package not found');
+      const data = await res.json();
+      document.getElementById('info').innerText = JSON.stringify(data, null, 2);
+    }
+    async function deliverPackage() {
+      const code = document.getElementById('trackingNumber').value;
+      const note = document.getElementById('proof').value;
+      const res = await fetch('/api/reservations/' + code + '/deliver', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({ proofType: 'text', proofValue: note })
       });
-      if (!res.ok) return alert('Error delivering');
-      alert('Delivered');
-      load(rec.id);
+      const data = await res.json();
+      alert('Package delivered');
+      document.getElementById('info').innerText = JSON.stringify(data, null, 2);
     }
-  };
-  document.getElementById('deliverPhotoBtn').onclick = () => {
-    document.getElementById('deliverArea').innerHTML = `
-      <form id="photoForm" enctype="multipart/form-data">
-        <input type="file" accept="image/*" name="proofPhoto" required />
-        <div class="mt-2"><button class="px-3 py-1 bg-green-600 text-white rounded">Upload & Deliver</button></div>
-      </form>
-    `;
-    document.getElementById('photoForm').onsubmit = async (e) => {
-      e.preventDefault();
-      const fd = new FormData(e.target);
-      const res = await fetch('/api/reservations/' + encodeURIComponent(rec.id) + '/deliver', {
-        method: 'POST',
-        body: fd
-      });
-      if (!res.ok) return alert('Error delivering with photo');
-      alert('Delivered with photo');
-      load(rec.id);
-    }
-  };
-}
-
-document.getElementById('loadBtn').addEventListener('click', () => {
-  const id = document.getElementById('scanInput').value.trim();
-  if (!id) return alert('Enter tracking or reservation id');
-  load(id);
-});
-</script>
+  </script>
+</head>
+<body class="bg-gray-100 p-6">
+  <div class="max-w-2xl mx-auto bg-white p-6 rounded shadow">
+    <h1 class="text-2xl font-bold mb-4">Driver Portal</h1>
+    <div class="mb-4">
+      <input type="text" id="trackingNumber" placeholder="Tracking Number" class="border p-2 rounded w-1/2">
+      <button onclick="loadPackage()" class="bg-blue-500 text-white px-4 py-2 rounded ml-2">Load Package</button>
+    </div>
+    <pre id="info" class="bg-gray-100 p-2 rounded mb-4"></pre>
+    <div>
+      <label>Proof / Note</label>
+      <input type="text" id="proof" class="border p-2 rounded w-full mb-2">
+      <button onclick="deliverPackage()" class="bg-green-500 text-white px-4 py-2 rounded">Deliver</button>
+    </div>
+  </div>
+</body>
+</html>
