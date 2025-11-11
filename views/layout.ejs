@@ -1,41 +1,26 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title><%= title || 'Home Amazon' %></title>
-  <!-- Tailwind CDN for quick styling -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/style.css">
 </head>
-<body class="bg-gray-50 text-gray-800">
-  <nav class="bg-white shadow p-4">
-    <div class="max-w-4xl mx-auto flex items-center justify-between">
-      <div class="flex items-center space-x-4">
-        <a href="/" class="font-bold text-lg">Home-Amazon</a>
-        <a href="/" class="text-sm text-gray-600">Reservation</a>
-        <a href="/track" class="text-sm text-gray-600 hidden">Track (use /track/:id)</a>
+<body>
+  <header class="container mb-6">
+    <nav class="flex justify-between items-center py-4">
+      <h1 class="text-xl font-bold">Home Amazon</h1>
+      <div class="flex gap-4">
+        <a href="/" class="hover:underline">Reservation</a>
+        <a href="/desk" class="hover:underline">Front Desk</a>
+        <a href="/store" class="hover:underline">Store</a>
+        <a href="/driver" class="hover:underline">Driver</a>
       </div>
-      <div class="flex items-center space-x-3">
-        <% if (typeof user !== 'undefined' && user) { %>
-          <span class="text-sm text-gray-600">Signed in: <strong><%= user %></strong></span>
-          <form method="post" action="/logout" class="inline">
-            <button class="px-3 py-1 rounded bg-gray-100 hover:bg-gray-200 text-sm">Logout</button>
-          </form>
-        <% } else { %>
-          <a href="/login?role=frontdesk" class="text-sm px-3 py-1 bg-gray-100 rounded">Front Desk</a>
-          <a href="/login?role=store" class="text-sm px-3 py-1 bg-gray-100 rounded">Store</a>
-          <a href="/login?role=driver" class="text-sm px-3 py-1 bg-gray-100 rounded">Driver</a>
-        <% } %>
-      </div>
-    </div>
-  </nav>
+    </nav>
+  </header>
 
-  <main class="max-w-4xl mx-auto p-6">
+  <main class="container">
     <%- body %>
   </main>
-
-  <footer class="max-w-4xl mx-auto p-6 text-sm text-gray-500">
-    <div>Demo app — storage is file-based and ephemeral on Render. See README for details.</div>
-  </footer>
 </body>
 </html>
