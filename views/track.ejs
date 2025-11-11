@@ -1,0 +1,56 @@
+<% layout('layout', { title: 'Track Reservation', user: null }) %>
+
+<% if (!reservation) { %>
+  <div class="bg-white p-6 rounded shadow">
+    <h2 class="text-xl font-bold">Reservation not found</h2>
+    <p class="mt-2">Please check your reservation ID.</p>
+  </div>
+<% } else { %>
+  <div class="bg-white p-6 rounded shadow">
+    <h2 class="text-xl font-bold">Reservation <span class="font-mono"><%= reservation.id %></span></h2>
+    <div class="mt-2">Status: <strong><%= reservation.status %></strong></div>
+    <div class="mt-2">Item: <%= reservation.itemDescription %></div>
+    <% if (reservation.storageLocation) { %>
+      <div class="mt-2">Location: <%= reservation.storageLocation %></div>
+    <% } %>
+    <div class="mt-4">
+      <h3 class="font-semibold">Events</h3>
+      <ul class="list-disc ml-6 mt-2">
+        <% reservation.events.slice().reverse().forEach(ev => { %>
+          <li><span class="text-xs text-gray-500"><%= new Date(ev.timestamp).toLocaleString() %></span> — <%= ev.eventType %> (<%= ev.actor %>) - <%= ev.note %></li>
+        <% }) %>
+      </ul>
+    </div>
+
+    <div class="mt-4">
+      <h3 class="font-semibold">Share / QR</h3>
+      <div class="mt-2">
+        <a class="text-blue-600 underline" href="<%= getBaseUrl ? getBaseUrl() : '#' %>/track/<%= reservation.id %>">
+          <%= (getBaseUrl ? getBaseUrl() : '') %>/track/<%= reservation.id %>
+        </a>
+      </div>
+
+      <div class="mt-4">
+        <% if (qrDataUrl) { %>
+          <img src="<%= qrDataUrl %>" alt="QR code" class="w-48 h-48 border p-2 bg-white"/>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Poll the API every 8 seconds for updates
+    async function fetchStatus() {
+      try {
+        const res = await fetch('/api/reservations/<%= reservation.id %>');
+        if (!res.ok) return;
+        const data = await res.json();
+        // If status changed, reload page to show new events (quick and simple)
+        if (data.updatedAt !== '<%= reservation.updatedAt %>') {
+          location.reload();
+        }
+      } catch (e) { /* ignore */ }
+    }
+    setInterval(fetchStatus, 8000);
+  </script>
+<% } %>
